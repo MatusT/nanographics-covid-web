@@ -5,10 +5,23 @@
 
 import {
     BufferGeometry,
+    InstancedBufferGeometry,
     FileLoader,
     Float32BufferAttribute,
     Loader
 } from "./three.js";
+
+
+
+let atom_radii_map = {
+    'C': 1.548,
+    'H': 1.100,
+    'N': 1.400,
+    'O': 1.348,
+    'P': 1.880,
+    'S': 1.880,
+    'A': 1.5
+};
 
 var PDBLoader = function (manager) {
 
@@ -125,10 +138,12 @@ PDBLoader.prototype = Object.assign(Object.create(Loader.prototype), {
 
         }
 
+        console.log("Number of atoms: " + index);
+
         function buildGeometry() {
 
             var build = {
-                geometryAtoms: new BufferGeometry(),
+                geometryAtoms: new InstancedBufferGeometry(),
                 geometryBonds: new BufferGeometry(),
                 json: {
                     atoms: atoms,
@@ -142,11 +157,11 @@ PDBLoader.prototype = Object.assign(Object.create(Loader.prototype), {
             var i, l;
 
             var verticesAtoms = [];
+            var radiiAtoms = [];
             var colorsAtoms = [];
             var verticesBonds = [];
 
             // atoms
-
             for (i = 0; i < atoms.length - 1; i++) {
 
                 var atom = atoms[i];
@@ -154,10 +169,16 @@ PDBLoader.prototype = Object.assign(Object.create(Loader.prototype), {
                 var x = atom[0];
                 var y = atom[1];
                 var z = atom[2];
+                var letter = atom[4];
+
 
                 verticesAtoms.push(x, y, z);
                 verticesAtoms.push(x, y, z);
                 verticesAtoms.push(x, y, z);
+
+                radiiAtoms.push(atom_radii_map[letter]);
+                radiiAtoms.push(atom_radii_map[letter]);
+                radiiAtoms.push(atom_radii_map[letter]);
 
                 var r = atom[3][0] / 255;
                 var g = atom[3][1] / 255;
@@ -167,31 +188,16 @@ PDBLoader.prototype = Object.assign(Object.create(Loader.prototype), {
                 colorsAtoms.push(r, g, b);
                 colorsAtoms.push(r, g, b);
 
+
             }
 
-            // bonds
-
-            // for (i = 0, l = bonds.length; i < l; i++) {
-
-            //     var bond = bonds[i];
-
-            //     var start = bond[0];
-            //     var end = bond[1];
-
-            //     verticesBonds.push(verticesAtoms[(start * 3) + 0]);
-            //     verticesBonds.push(verticesAtoms[(start * 3) + 1]);
-            //     verticesBonds.push(verticesAtoms[(start * 3) + 2]);
-
-            //     verticesBonds.push(verticesAtoms[(end * 3) + 0]);
-            //     verticesBonds.push(verticesAtoms[(end * 3) + 1]);
-            //     verticesBonds.push(verticesAtoms[(end * 3) + 2]);
-
-            // }
+            // console.log(radiiAtoms);
 
             // build geometry
             geometryAtoms.setAttribute('position', new Float32BufferAttribute(verticesAtoms, 3));
+            geometryAtoms.setAttribute('radius', new Float32BufferAttribute(radiiAtoms, 1));
             geometryAtoms.setAttribute('color', new Float32BufferAttribute(colorsAtoms, 3));
-            
+
             // geometryBonds.setAttribute('position', new Float32BufferAttribute(verticesBonds, 3));
 
             return build;
